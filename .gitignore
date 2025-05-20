@@ -1,0 +1,7 @@
+.venv/*
+model_cache/*
+model_offload/*
+temp_audio/*
+.env
+requirements.txt
+
