@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Speech AI System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --secondary-color: #818CF8;
+            --text-color: #1F2937;
+            --bg-color: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --error-color: #EF4444;
+            --success-color: #10B981;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #818CF8;
+            --secondary-color: #4F46E5;
+            --text-color: #F3F4F6;
+            --bg-color: #111827;
+            --card-bg: #1F2937;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(30deg);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            margin-top: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .record-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .record-button {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+
+        .record-button:hover {
+            transform: scale(1.05);
+        }
+
+        .record-button:active {
+            transform: scale(0.95);
+        }
+
+        .record-button i {
+            color: white;
+            font-size: 2rem;
+        }
+
+        .record-button.recording {
+            animation: pulse 2s infinite;
+            background: var(--error-color);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .status {
+            font-size: 1rem;
+            color: var(--text-color);
+            opacity: 0.8;
+            text-align: center;
+        }
+
+        .output-section {
+            background: var(--bg-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .output-card {
+            background: var(--card-bg);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+
+        .output-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .output-card p {
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+            background: var(--bg-color);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid var(--bg-color);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .visualizer {
+            height: 60px;
+            width: 100%;
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .visualizer-bar {
+            width: 4px;
+            background: var(--secondary-color);
+            border-radius: 2px;
+            transition: height 0.1s;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                margin: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .record-button {
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎙️ AI Speech Assistant</h1>
+            <p class="subtitle">Click the microphone to start speaking with AI</p>
+        </div>
+
+        <div class="record-section">
+            <button class="record-button" id="recordButton">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <div class="visualizer" id="visualizer">
+                <!-- Bars will be added dynamically -->
+            </div>
+            <p id="status" class="status">Ready to record</p>
+        </div>
+
+        <div class="output-section" id="output">
+            <div class="output-card">
+                <h3><i class="fas fa-comment"></i> Your Message</h3>
+                <p id="transcription">Waiting for input...</p>
+            </div>
+
+            <div class="output-card">
+                <h3><i class="fas fa-robot"></i> AI Response</h3>
+                <p id="aiResponse">Waiting for input...</p>
+            </div>
+
+            <div class="output-card">
+                <h3><i class="fas fa-volume-up"></i> Audio Response</h3>
+                <audio id="audioOutput" class="audio-player" controls hidden></audio>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const recordButton = document.getElementById('recordButton');
+            const status = document.getElementById('status');
+            const transcription = document.getElementById('transcription');
+            const aiResponse = document.getElementById('aiResponse');
+            const audioOutput = document.getElementById('audioOutput');
+            const themeToggle = document.getElementById('themeToggle');
+            const visualizer = document.getElementById('visualizer');
+            
+            let mediaRecorder;
+            let audioChunks = [];
+            let isRecording = false;
+            let audioContext;
+            let analyser;
+            let isDarkMode = false;
+
+            // Create visualizer bars
+            for (let i = 0; i < 30; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'visualizer-bar';
+                bar.style.height = '2px';
+                visualizer.appendChild(bar);
+            }
+
+            // Theme toggle
+            themeToggle.addEventListener('click', () => {
+                isDarkMode = !isDarkMode;
+                document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+                themeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            });
+            
+            async function getMedia() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    setupAudioVisualizer(stream);
+                    return stream;
+                } catch (err) {
+                    console.error("Error accessing microphone:", err);
+                    status.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error: Microphone access denied';
+                    return null;
+                }
+            }
+
+            function setupAudioVisualizer(stream) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 64;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                function updateVisualizer() {
+                    if (isRecording) {
+                        analyser.getByteFrequencyData(dataArray);
+                        const bars = visualizer.children;
+                        for (let i = 0; i < bars.length; i++) {
+                            const height = (dataArray[i] / 255) * 50 + 2;
+                            bars[i].style.height = height + 'px';
+                        }
+                        requestAnimationFrame(updateVisualizer);
+                    } else {
+                        const bars = visualizer.children;
+                        for (let i = 0; i < bars.length; i++) {
+                            bars[i].style.height = '2px';
+                        }
+                    }
+                }
+
+                updateVisualizer();
+            }
+            
+            async function startRecording() {
+                // Stop AI audio if it's playing
+                if (audioOutput && !audioOutput.paused) {
+                    audioOutput.pause();
+                    audioOutput.currentTime = 0;
+                }
+                
+                const stream = await getMedia();
+                if (!stream) return;
+                
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = sendAudioToServer;
+                
+                mediaRecorder.start();
+                isRecording = true;
+                recordButton.classList.add('recording');
+                recordButton.innerHTML = '<i class="fas fa-stop"></i>';
+                status.innerHTML = '<i class="fas fa-circle text-red-500"></i> Recording...';
+            }
+            
+            function stopRecording() {
+                if (mediaRecorder && isRecording) {
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    recordButton.classList.remove('recording');
+                    recordButton.innerHTML = '<i class="fas fa-microphone"></i>';
+                    status.innerHTML = '<div class="loading"></div> Processing...';
+                    recordButton.disabled = true;
+                }
+            }
+            
+            async function sendAudioToServer() {
+                try {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.wav');
+                    
+                    transcription.innerHTML = '<div class="loading"></div>';
+                    aiResponse.innerHTML = '<div class="loading"></div>';
+                    audioOutput.hidden = true;
+                    
+                    const response = await fetch('/process-audio', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to process audio');
+                    }
+                    
+                    const data = await response.json();
+                    transcription.textContent = data.transcription || 'No transcription available';
+                    aiResponse.textContent = data.aiResponse || 'No response available';
+                    
+                    if (data.audioOutput) {
+                        audioOutput.src = data.audioOutput;
+                        audioOutput.hidden = false;
+                        audioOutput.play();
+                    }
+                    
+                    status.innerHTML = '<i class="fas fa-check"></i> Ready';
+                    recordButton.disabled = false;
+                } catch (error) {
+                    transcription.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error';
+                    aiResponse.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error';
+                    status.innerHTML = `<i class="fas fa-exclamation-circle"></i> Error: ${error.message}`;
+                    recordButton.disabled = false;
+                    console.error(error);
+                }
+            }
+            
+            recordButton.addEventListener('click', () => {
+                if (isRecording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

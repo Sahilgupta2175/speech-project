@@ -4,4 +4,4 @@ model_offload/*
 temp_audio/*
 .env
 requirements.txt
-
+.hintrc
